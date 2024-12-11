@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FSI Calculator</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            height: 120vh;
+            background-image: url('freepik-export-20241211173626ZAQJ.jpeg');
+            background-size: cover;
+            background-repeat: repeat;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .calculator {
+            background-color: rgba(255, 255, 255, 0.95); /* Light semi-transparent background */
+            border-radius: 15px;
+            padding: 15px; /* Reduced padding */
+            width: 320px; /* Reduced width */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            text-align: center;
+            color: #5d2929;
+            font-weight: bold;
+            font-style: oblique;
+            font-size: 18px; /* Adjusted font size */
+        }
+
+        label {
+            display: block;
+            font-size: 12px; /* Font size */
+            margin: 6px 0 3px; /* Adjusted margins */
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 6px; /* Reduced padding */
+            margin: 3px 0 8px; /* Adjusted margins */
+            font-size: 12px; /* Font size */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 48%;
+            padding: 6px; /* Reduced padding */
+            font-size: 12px; /* Adjusted font size */
+            font-weight: bold;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px; /* Added margin for spacing */
+        }
+
+        button.calculate {
+            background-color: #602929;
+            color: white;
+        }
+
+        button.calculate:hover {
+            background-color: #723b2c;
+        }
+
+        button.reset {
+            background-color: #f44336;
+            color: white;
+        }
+
+        button.reset:hover {
+            background-color: #d32f2f;
+        }
+
+        .result {
+            margin-top: 10px; /* Adjusted margin */
+            padding: 8px; /* Reduced padding */
+            border-radius: 8px; /* Adjusted border radius */
+            background-color: #a88c87d4;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #b4b87b; /* Added border */
+        }
+
+        .result h3 {
+            font-size: 11px; /* Reduced font size */
+            margin: 3px 0; /* Adjusted margins */
+            color: #333;
+            padding: 6px; /* Reduced padding */
+            border: 1px solid #0c0c0c; /* Added border for each output */
+            border-radius: 4px; /* Adjusted corners for output boxes */
+            background-color: #fff; /* Background color for output boxes */
+        }
+
+        .highlight {
+            color: #ff5722;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>FSI Calculator</h2>
+        <label for="plotArea">Plot Area:</label>
+        <input type="number" id="plotArea" placeholder="Enter Plot Area">
+
+        <label for="rwArea">R-W Area:</label>
+        <input type="number" id="rwArea" placeholder="Enter RW Area">
+
+        <label for="tdr">TDR:</label>
+        <select id="tdr">
+            <option value="0.40">[0.40] (9m and above but below 12m)</option>
+            <option value="0.65">[0.65] (12m and above but below 15m)</option>
+            <option value="0.90">[0.90] (15m and above but below 24m)</option>
+            <option value="1.15">[1.15] (24m and above but below 30m)</option>
+            <option value="1.40">[1.40] (30m and above)</option>
+        </select>
+
+        <label for="existingBuiltUp">Existing Number of Units:</label>
+        <input type="number" id="existingBuiltUp" placeholder="Enter Units in sq-mtrs">
+
+        <!-- Buttons for selecting Ancillary FSI percentage -->
+        <div style="text-align: center; margin-top: 5px;">
+            <button class="calculate" onclick="calculateFSI(0.6)">Calculate with 60% Ancillary FSI</button>
+            <button class="calculate" onclick="calculateFSI(0.8)">Calculate with 80% Ancillary FSI</button>
+            <button class="reset" onclick="resetValues()">Reset</button>
+        </div>
+
+        <!-- Results Section -->
+        <div class="result">
+            <h3>Net Plot Area: <span id="balanceArea">0</span></h3>
+            <h3>Basic FSI: <span id="basicFSI">0</span></h3>
+            <h3>Premium FSI: <span id="premiumFSI">0</span></h3>
+            <h3>TDR: <span id="tdrFSI">0</span></h3>
+            <h3>Total FSI: <span id="totalFSI">0</span></h3>
+            <h3>Incentive FSI [Redevelopment]: <span id="incentiveFSI">0</span></h3>
+            <h3>RW Area [x 2]: <span id="rwMultiplied">0</span></h3>
+            <h3>Ancillary FSI (60%): <span id="ancillaryFSI">0</span></h3>
+            <h3>Ancillary FSI (80%): <span id="ancillaryFSI80">0</span></h3>
+            <h3 class="highlight">Permissible Built-up: <span id="permissibleBuiltUp">0</span> <span id="permissibleBuiltUpInFeet">(0 sq.ft)</span></h3>
+        </div>
+    </div>
+
+    <script>
+        function calculateFSI(ancillaryPercentage) {
+            const plotArea = parseFloat(document.getElementById('plotArea').value);
+            const rwArea = parseFloat(document.getElementById('rwArea').value);
+            const tdrValue = parseFloat(document.getElementById('tdr').value);
+            const existingBuiltUp = parseFloat(document.getElementById('existingBuiltUp').value);
+
+            if (isNaN(plotArea) || isNaN(rwArea) || isNaN(existingBuiltUp)) {
+                alert("Please enter valid numbers");
+                return;
+            }
+
+            const balanceArea = plotArea - rwArea;
+            const basicFSI = 1.1 * balanceArea;
+            const premiumFSI = 0.5 * plotArea;
+            const tdrFSI = tdrValue * plotArea;
+            const totalFSI = basicFSI + premiumFSI + tdrFSI;
+            const incentiveFSI = 15 * existingBuiltUp;
+            const rwMultiplied = 2 * rwArea;
+            const ancillaryFSI = ancillaryPercentage * totalFSI;
+            const permissibleBuiltUp = totalFSI + ancillaryFSI;
+            const permissibleBuiltUpInFeet = permissibleBuiltUp * 10.764;  // Conversion to sq-feet
+
+            document.getElementById('balanceArea').textContent = balanceArea.toFixed(2);
+            document.getElementById('basicFSI').textContent = basicFSI.toFixed(2);
+            document.getElementById('premiumFSI').textContent = premiumFSI.toFixed(2);
+            document.getElementById('tdrFSI').textContent = tdrFSI.toFixed(2);
+            document.getElementById('totalFSI').textContent = totalFSI.toFixed(2);
+            document.getElementById('incentiveFSI').textContent = incentiveFSI.toFixed(2);
+            document.getElementById('rwMultiplied').textContent = rwMultiplied.toFixed(2);
+            document.getElementById('ancillaryFSI').textContent = (0.6 * totalFSI).toFixed(2);
+            document.getElementById('ancillaryFSI80').textContent = (0.8 * totalFSI).toFixed(2);
+            document.getElementById('permissibleBuiltUp').textContent = permissibleBuiltUp.toFixed(2);
+            document.getElementById('permissibleBuiltUpInFeet').textContent = `(${permissibleBuiltUpInFeet.toFixed(2)})`;
+        }
+
+        function resetValues() {
+            document.getElementById('plotArea').value = "";
+            document.getElementById('rwArea').value = "";
+            document.getElementById('tdr').value = "0.40";
+            document.getElementById('existingBuiltUp').value = "";
+
+            const results = document.querySelectorAll(".result span");
+            results.forEach(result => result.textContent = "0");
+        }
+    </script>
+</body>
+</html>
